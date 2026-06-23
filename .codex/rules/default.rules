@@ -1,0 +1,41 @@
+prefix_rule(
+    pattern = ["rm"],
+    decision = "allow",
+    justification = "Project policy allows rm without approval.",
+)
+
+prefix_rule(
+    pattern = ["git", "push"],
+    decision = "allow",
+    justification = "Project policy allows git push without approval.",
+)
+
+prefix_rule(
+    pattern = ["git", "reset"],
+    decision = "allow",
+    justification = "Project policy allows git reset without approval.",
+)
+
+prefix_rule(
+    pattern = ["git", "checkout"],
+    decision = "allow",
+    justification = "Project policy allows git checkout without approval.",
+)
+
+prefix_rule(
+    pattern = ["docker"],
+    decision = "allow",
+    justification = "Project policy allows docker without approval.",
+)
+
+prefix_rule(
+    pattern = ["curl"],
+    decision = "allow",
+    justification = "Project policy allows curl without approval.",
+)
+
+prefix_rule(
+    pattern = ["wget"],
+    decision = "allow",
+    justification = "Project policy allows wget without approval.",
+)
