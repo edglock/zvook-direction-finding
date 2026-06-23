@@ -85,9 +85,9 @@ tau_ij = -dot(r_i - r_j, u) / c
 
 ```bash
 python -m zvook_doa.simulate --az 60 --el 25 --snr-db 10
-python scripts/run_simulation.py --az 60 --el 25 --snr-db 20
-python scripts/run_wav.py path/to/4ch.wav
-python scripts/run_realtime.py
+python scripts/run_simulation.py --az 60 --el 25 --snr-db 20 --config configs/default_array_4mic.yaml
+python scripts/run_wav.py path/to/4ch.wav --config configs/default_array_4mic.yaml --calibration configs/calibration_example.json
+python scripts/run_realtime.py --config configs/default_array_4mic.yaml --calibration configs/calibration_example.json
 ```
 
 ## Встановлення та перевірка
@@ -105,6 +105,18 @@ python -m venv .venv
 .venv/bin/python scripts/run_simulation.py --az 60 --el 25
 .venv/bin/python scripts/run_simulation.py --az 180 --el 45
 .venv/bin/python scripts/run_simulation.py --az 315 --el 15
+```
+
+Змінити геометрію, `fs` або frequency bands можна через YAML:
+
+```bash
+.venv/bin/python scripts/run_simulation.py --config configs/default_array_4mic.yaml
+```
+
+Калібрування для WAV/realtime режимів передається окремим JSON:
+
+```bash
+.venv/bin/python scripts/run_wav.py path/to/4ch.wav --calibration configs/calibration_example.json
 ```
 
 Поточний простий benchmark у цьому середовищі: приблизно `152 ms/frame` для
@@ -125,3 +137,4 @@ python -m venv .venv
 - `DOCS/Planning.txt` - оригінальний prompt/spec.
 - `DOCS/MVP_PLAN.md` - staged план реалізації.
 - `DOCS/ARCHITECTURE.md` - архітектура майбутнього Python пакета.
+- `DOCS/STATUS_2026-06-23.md` - поточний MVP статус і verification evidence.

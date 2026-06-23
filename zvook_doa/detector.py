@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -20,6 +20,7 @@ class DroneDetector:
     fs: int = 48000
     band_hz: tuple[float, float] = (80.0, 2000.0)
     onnx_model_path: str | None = None
+    _onnx_session: object | None = field(default=None, init=False)
 
     def __post_init__(self) -> None:
         self._onnx_session = None

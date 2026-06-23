@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 
-from zvook_doa.config import ArrayConfig
+from zvook_doa.cli import load_array_config
 from zvook_doa.geometry import make_4mic_geometry
 from zvook_doa.simulate import simulate_plane_wave
 from zvook_doa.srp_phat import SRPPHATLocalizer
@@ -19,9 +19,10 @@ def main() -> int:
     parser.add_argument("--el", type=float, default=25.0)
     parser.add_argument("--snr-db", type=float, default=20.0)
     parser.add_argument("--signal-type", choices=["chirp", "noise", "tones"], default="chirp")
+    parser.add_argument("--config", default=None, help="Path to ArrayConfig YAML.")
     args = parser.parse_args()
 
-    config = ArrayConfig()
+    config = load_array_config(args.config)
     positions = make_4mic_geometry(config)
     frame = simulate_plane_wave(
         azimuth_deg=args.az,

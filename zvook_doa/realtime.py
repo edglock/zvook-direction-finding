@@ -11,6 +11,7 @@ import time
 import numpy as np
 
 from .audio_io import iter_frames, read_wav_4ch, require_sounddevice
+from .calibration import Calibration
 from .config import ArrayConfig
 from .detector import DroneDetector
 from .geometry import make_4mic_geometry
@@ -27,12 +28,13 @@ def process_frame(
     detector: DroneDetector,
     localizer: SRPPHATLocalizer,
     tracker: DirectionTracker,
+    calibration: Calibration | None = None,
 ) -> dict[str, object]:
     """Run detector, localizer, and tracker for one frame."""
 
     spectra, freqs = rfft_multichannel(apply_hann(remove_dc(frame)), config.fs)
     detector_result = detector.predict(frame, freqs=freqs, spectra=spectra)
-    result = localizer.locate(frame, detector_result=detector_result)
+    result = localizer.locate(frame, calibration=calibration, detector_result=detector_result)
     tracked = tracker.update(
         float(result["azimuth_deg"]),
         float(result["elevation_deg"]),
@@ -49,7 +51,11 @@ def process_frame(
     }
 
 
-def run_wav_jsonl(path: str, config: ArrayConfig | None = None) -> None:
+def run_wav_jsonl(
+    path: str,
+    config: ArrayConfig | None = None,
+    calibration: Calibration | None = None,
+) -> None:
     """Process a 4-channel WAV file and print JSON Lines."""
 
     config = config or ArrayConfig()
@@ -61,11 +67,15 @@ def run_wav_jsonl(path: str, config: ArrayConfig | None = None) -> None:
     tracker = DirectionTracker()
     for start, frame in iter_frames(audio, config.frame_samples, config.hop_samples):
         timestamp = start / config.fs
-        record = process_frame(frame, timestamp, config, detector, localizer, tracker)
+        record = process_frame(frame, timestamp, config, detector, localizer, tracker, calibration)
         print(json.dumps(json_ready(record), ensure_ascii=False), flush=True)
 
 
-def run_realtime_jsonl(config: ArrayConfig | None = None, device: int | str | None = None) -> None:
+def run_realtime_jsonl(
+    config: ArrayConfig | None = None,
+    device: int | str | None = None,
+    calibration: Calibration | None = None,
+) -> None:
     """Read realtime audio via sounddevice and print JSON Lines."""
 
     config = config or ArrayConfig()
@@ -102,7 +112,7 @@ def run_realtime_jsonl(config: ArrayConfig | None = None, device: int | str | No
                 joined = np.vstack(list(ring))
                 frame = joined[: config.frame_samples]
                 timestamp = time.time()
-                record = process_frame(frame, timestamp, config, detector, localizer, tracker)
+                record = process_frame(frame, timestamp, config, detector, localizer, tracker, calibration)
                 print(json.dumps(json_ready(record), ensure_ascii=False), flush=True)
                 keep = joined[config.hop_samples :]
                 ring.clear()
