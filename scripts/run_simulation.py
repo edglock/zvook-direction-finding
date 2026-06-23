@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 
 from zvook_doa.cli import load_array_config
 from zvook_doa.geometry import make_4mic_geometry
@@ -22,19 +23,23 @@ def main() -> int:
     parser.add_argument("--config", default=None, help="Path to ArrayConfig YAML.")
     args = parser.parse_args()
 
-    config = load_array_config(args.config)
-    positions = make_4mic_geometry(config)
-    frame = simulate_plane_wave(
-        azimuth_deg=args.az,
-        elevation_deg=args.el,
-        duration_s=config.frame_duration_s,
-        fs=config.fs,
-        mic_positions=positions,
-        signal_type=args.signal_type,
-        snr_db=args.snr_db,
-        speed_of_sound=config.speed_of_sound,
-    )
-    result = SRPPHATLocalizer(config, positions).locate(frame)
+    try:
+        config = load_array_config(args.config)
+        positions = make_4mic_geometry(config)
+        frame = simulate_plane_wave(
+            azimuth_deg=args.az,
+            elevation_deg=args.el,
+            duration_s=config.frame_duration_s,
+            fs=config.fs,
+            mic_positions=positions,
+            signal_type=args.signal_type,
+            snr_db=args.snr_db,
+            speed_of_sound=config.speed_of_sound,
+        )
+        result = SRPPHATLocalizer(config, positions).locate(frame)
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     result["true_azimuth_deg"] = args.az
     result["true_elevation_deg"] = args.el
     result["angular_error_deg"] = angular_distance_deg(

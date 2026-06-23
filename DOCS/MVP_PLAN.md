@@ -1,8 +1,8 @@
 # MVP Plan
 
 Цей план розбиває `DOCS/Planning.txt` на етапи, які можна реалізовувати та
-перевіряти окремо. Поточний стан після bootstrap: документація створена, Python
-код ще не реалізований.
+перевіряти окремо. Поточний стан: Python MVP реалізований, проходить synthetic
+validation і готовиться до тестування користувачем на реальному аудіо/hardware.
 
 ## MVP-0: Repo and Docs Bootstrap
 
@@ -149,3 +149,19 @@ pytest
   - `az=315`, `el=15`
 - Додати benchmark часу обробки одного `0.2 s` кадру в `README.md`.
 - Провести реальне калібрування каналів перед польовими тестами.
+
+## User Testing Gate
+
+Перед передачею на тестування:
+
+```bash
+.venv/bin/python -m pytest
+.venv/bin/python scripts/check_mvp.py
+```
+
+Очікувано:
+
+- усі unit tests проходять;
+- `scripts/check_mvp.py` повертає exit code `0`;
+- synthetic matrix має `worst_error_deg <= 5.0`;
+- benchmark друкує `avg_ms_per_frame` для поточної машини.

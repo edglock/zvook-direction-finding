@@ -69,6 +69,7 @@ tau_ij = -dot(r_i - r_j, u) / c
 - detector stub з optional ONNX Runtime інтерфейсом;
 - SRP-PHAT coarse/refine localizer;
 - synthetic plane-wave generator;
+- MVP self-check для synthetic matrix і benchmark;
 - direction tracker;
 - WAV і realtime JSON Lines pipeline;
 - CLI-скрипти та unit tests.
@@ -81,7 +82,7 @@ tau_ij = -dot(r_i - r_j, u) / c
 - WAV mode: обробка 4-канальних WAV кадрами та JSON Lines output.
 - Realtime mode: optional `sounddevice`, ring buffer, tracker, JSON Lines output.
 
-## Заплановані CLI
+## CLI
 
 ```bash
 python -m zvook_doa.simulate --az 60 --el 25 --snr-db 10
@@ -119,8 +120,19 @@ python -m venv .venv
 .venv/bin/python scripts/run_wav.py path/to/4ch.wav --calibration configs/calibration_example.json
 ```
 
-Поточний простий benchmark у цьому середовищі: приблизно `152 ms/frame` для
-одного synthetic кадру `0.2 s` з default coarse/refine сітками.
+## MVP self-check
+
+Перед реальним тестуванням можна запустити один synthetic health check:
+
+```bash
+.venv/bin/python scripts/check_mvp.py
+```
+
+Він проганяє стандартну матрицю напрямків, перевіряє максимальну похибку
+`<= 5 deg`, міряє середній час обробки одного кадру і друкує JSON-звіт.
+
+Поточний простий benchmark у цьому середовищі: орієнтовно `150-160 ms/frame`
+для одного synthetic кадру `0.2 s` з default coarse/refine сітками.
 
 ## Обмеження
 
