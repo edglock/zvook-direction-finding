@@ -1,0 +1,330 @@
+Ти — senior DSP/ML software engineer. Реалізуй Python-проєкт для 4-канальної системи акустичного виявлення та пеленгації БпЛА за допомогою SRP-PHAT.
+
+Контекст системи:
+- Є 4 мікрофони.
+- 3 нижні мікрофони розташовані у вершинах рівностороннього трикутника в горизонтальній площині.
+- 4-й мікрофон розташований над центром трикутника.
+- За замовчуванням:
+  - сторона трикутника a = 0.25 м;
+  - висота верхнього мікрофона h = 0.20 м;
+  - fs = 48000 Hz;
+  - швидкість звуку c = 343.0 м/с.
+- Робоча смуга детекції: 50–2000 Hz.
+- Груба пеленгація: 150–650 Hz.
+- Локальне уточнення: 150–2000 Hz.
+- Довжина кадру: 0.2 s.
+- Крок оновлення: 0.05 s.
+- Потрібно працювати близько до real-time.
+- Основна задача: оцінити azimuth_deg, elevation_deg, confidence для джерела звуку БпЛА.
+
+Створи репозиторій такої структури:
+
+zvook_doa/
+  pyproject.toml
+  README.md
+  zvook_doa/
+    __init__.py
+    config.py
+    geometry.py
+    calibration.py
+    preprocessing.py
+    detector.py
+    srp_phat.py
+    tracker.py
+    audio_io.py
+    realtime.py
+    simulate.py
+    utils.py
+  tests/
+    test_geometry.py
+    test_tdoa_sign.py
+    test_srp_synthetic.py
+    test_tracker.py
+  configs/
+    default_array_4mic.yaml
+    calibration_example.json
+  scripts/
+    run_wav.py
+    run_realtime.py
+    run_simulation.py
+
+Вимоги до реалізації:
+
+1. config.py
+- Реалізуй dataclass ArrayConfig:
+  - fs: int = 48000
+  - speed_of_sound: float = 343.0
+  - triangle_side_m: float = 0.25
+  - top_height_m: float = 0.20
+  - frame_duration_s: float = 0.2
+  - hop_duration_s: float = 0.05
+  - detection_band_hz: tuple = (50.0, 2000.0)
+  - coarse_band_hz: tuple = (150.0, 650.0)
+  - refine_band_hz: tuple = (150.0, 2000.0)
+  - coarse_az_step_deg: float = 3.0
+  - coarse_el_step_deg: float = 3.0
+  - refine_radius_deg: float = 15.0
+  - refine_step_deg: float = 0.5
+  - min_elevation_deg: float = 0.0
+  - max_elevation_deg: float = 90.0
+- Додай завантаження конфігурації з YAML.
+
+2. geometry.py
+- Реалізуй функцію make_4mic_geometry(config), яка повертає np.ndarray shape (4, 3):
+  r1 = [a/sqrt(3), 0, 0]
+  r2 = [-a/(2*sqrt(3)), a/2, 0]
+  r3 = [-a/(2*sqrt(3)), -a/2, 0]
+  r4 = [0, 0, h]
+- Реалізуй make_pairs(n_mics), що повертає всі пари i<j.
+- Реалізуй direction_grid(az_step_deg, el_step_deg, min_el_deg, max_el_deg), що повертає:
+  - directions shape (N, 3)
+  - azimuth_deg shape (N,)
+  - elevation_deg shape (N,)
+- Конвенція:
+  - azimuth 0° = +X;
+  - azimuth зростає у напрямку +Y;
+  - elevation 0° = горизонт;
+  - elevation 90° = вгору.
+- Реалізуй delay_lut(mic_positions, pairs, directions, c), де:
+  tau_ij = -dot(r_i - r_j, u) / c
+  результат shape (N_directions, N_pairs).
+- Додай unit tests для координат і delay_lut.
+
+3. calibration.py
+- Реалізуй dataclass Calibration:
+  - channel_delay_samples: np.ndarray shape (4,)
+  - channel_gain: np.ndarray shape (4,)
+- Реалізуй apply_calibration(frame, calibration, fs):
+  - frame shape (n_samples, 4)
+  - gain compensation
+  - fractional delay compensation через frequency-domain phase shift або scipy interpolation
+- Реалізація має працювати з fractional sample delays.
+- Додай приклад calibration JSON.
+
+4. preprocessing.py
+- Реалізуй:
+  - remove_dc(frame)
+  - apply_hann(frame)
+  - rfft_multichannel(frame, fs)
+  - frequency_mask(freqs, band_hz)
+  - band_limited_spectra(X, freqs, band_hz)
+- X має мати shape (n_freqs, n_channels).
+- Довжина FFT = довжина кадру.
+- Не використовуй scipy.signal.stft для одного кадру; достатньо np.fft.rfft.
+
+5. detector.py
+- Реалізуй клас DroneDetector.
+- На першому етапі зроби stub:
+  - метод predict(frame, freqs=None, spectra=None) повертає:
+    {
+      "p_drone": float,
+      "frequency_weights": np.ndarray або None
+    }
+- Stub може оцінювати p_drone евристично за енергією у 80–2000 Hz, але код має бути готовий до заміни на ONNX/TFLite.
+- Додай інтерфейс для майбутнього ONNX Runtime, але не роби onnxruntime обов’язковою залежністю.
+
+6. srp_phat.py
+Реалізуй основний клас SRPPHATLocalizer.
+
+Ініціалізація:
+- приймає ArrayConfig, mic_positions.
+- створює pairs.
+- створює coarse direction grid.
+- створює coarse delay LUT.
+- кешує частоти після першого кадру.
+
+Методи:
+- compute_phat_cross_spectra(X, freqs, band_hz, frequency_weights=None)
+  - X shape (n_freqs, n_channels)
+  - для всіх пар i<j:
+    C_ij = X[:, i] * conj(X[:, j])
+    PHAT = C_ij / (abs(C_ij) + eps)
+  - повертає phat shape (n_pairs, n_selected_freqs), selected_freqs, optional weights.
+- score_grid(phat, selected_freqs, delay_lut, weights=None)
+  - реалізуй частотну форму:
+    score(u) = sum_pairs sum_freq weights * real(PHAT_ij(f) * exp(1j*2*pi*f*tau_ij(u)))
+  - має бути vectorized або chunked по directions, без Python-loop по кожному direction.
+  - повертає scores shape (N_directions,).
+- locate_coarse(X, freqs, frequency_weights=None)
+  - використовує coarse band 150–650 Hz.
+  - повертає dict:
+    {
+      "azimuth_deg": float,
+      "elevation_deg": float,
+      "score": float,
+      "scores": np.ndarray,
+      "top_indices": list[int],
+      "peak_to_sidelobe": float
+    }
+- make_local_grid(azimuth_deg, elevation_deg)
+  - локальний grid ± refine_radius_deg, step refine_step_deg.
+  - азимут має wrap-around 0–360.
+  - elevation clamp до [0, 90].
+- locate_refined(X, freqs, coarse_result, frequency_weights=None)
+  - використовує локальний grid.
+  - використовує refine band 150–2000 Hz.
+  - додай опцію robust_subbands:
+    - розбити refine band на підсмуги по 200 Hz;
+    - оцінити score по кожній підсмузі;
+    - відкинути підсмуги, якщо максимум далеко від coarse_result більше ніж 15° або якщо peak_to_sidelobe низький;
+    - підсумувати тільки валідні підсмуги.
+  - повертає dict:
+    {
+      "azimuth_deg": float,
+      "elevation_deg": float,
+      "score": float,
+      "valid_bands_hz": list[tuple[float, float]],
+      "peak_to_sidelobe": float
+    }
+- locate(frame, calibration=None, detector_result=None)
+  - повний pipeline для одного кадру:
+    - calibration optional;
+    - remove_dc;
+    - Hann;
+    - FFT;
+    - coarse;
+    - refine;
+    - confidence.
+  - повертає фінальний dict:
+    {
+      "azimuth_deg": float,
+      "elevation_deg": float,
+      "confidence": float,
+      "coarse_azimuth_deg": float,
+      "coarse_elevation_deg": float,
+      "srp_peak": float,
+      "srp_peak_to_sidelobe": float,
+      "valid_frequency_bands_hz": list,
+      "status": "ok" або "low_confidence"
+    }
+
+7. Confidence
+- Реалізуй compute_confidence():
+  - входи: p_drone, peak_to_sidelobe, number_of_valid_bands, score, track_quality optional.
+  - результат clamp у [0, 1].
+- Не роби confidence просто p_drone.
+- Враховуй SRP peak-to-sidelobe ratio і кількість валідних підсмуг.
+
+8. tracker.py
+- Реалізуй простий трекер напрямку.
+- Мінімально:
+  - клас DirectionTracker;
+  - стан: unit vector, angular velocity optional, last_timestamp.
+  - update(measurement_az_deg, measurement_el_deg, confidence, timestamp)
+  - якщо confidence низький, робити prediction/hold.
+  - якщо confidence високий, згладжувати одиничний вектор.
+- Не згладжуй напряму азимут без unwrap, бо буде проблема на переході 359° -> 0°.
+- Повертає:
+  {
+    "azimuth_deg": float,
+    "elevation_deg": float,
+    "track_confidence": float,
+    "status": "tracked"/"hold"/"init"
+  }
+
+9. simulate.py
+- Реалізуй генератор синтетичних 4-канальних даних для plane wave.
+- Вхід:
+  - azimuth_deg
+  - elevation_deg
+  - duration_s
+  - fs
+  - mic_positions
+  - signal type: chirp/noise/tones
+  - snr_db
+- Для fractional delays використовуй frequency-domain delay:
+  X_delayed(f) = X(f) * exp(-j*2*pi*f*delay)
+- Додай шум.
+- Поверни frame shape (n_samples, 4).
+- Додай CLI:
+  python -m zvook_doa.simulate --az 60 --el 25 --snr-db 10
+
+10. audio_io.py
+- Реалізуй читання 4-канального WAV через soundfile.
+- Реалізуй optional realtime input через sounddevice, але sounddevice не має бути обов’язковою залежністю для unit tests.
+- Якщо sounddevice не встановлений, realtime CLI має показати зрозумілу помилку.
+
+11. realtime.py
+- Реалізуй pipeline:
+  - Audio input -> ring buffer -> frame each hop -> detector -> SRP-PHAT -> tracker -> JSON line output.
+- JSON line має містити:
+  {
+    "timestamp": float,
+    "p_drone": float,
+    "azimuth_deg": float,
+    "elevation_deg": float,
+    "confidence": float,
+    "coarse_azimuth_deg": float,
+    "coarse_elevation_deg": float,
+    "valid_frequency_bands_hz": [[150,350], ...],
+    "srp_peak": float,
+    "srp_peak_to_sidelobe": float,
+    "status": string
+  }
+
+12. scripts
+- scripts/run_simulation.py:
+  - генерує синтетичний сигнал з відомими az/el;
+  - запускає локалізацію;
+  - друкує true та estimated.
+- scripts/run_wav.py:
+  - читає 4-канальний WAV;
+  - обробляє кадрами;
+  - друкує JSON lines.
+- scripts/run_realtime.py:
+  - читає зі sounddevice;
+  - друкує JSON lines.
+
+13. Tests
+- test_geometry.py:
+  - перевірити координати для a=0.25, h=0.20.
+  - перевірити кількість пар = 6.
+- test_tdoa_sign.py:
+  - для джерела на +X перевірити, що мікрофон r1 має прийти раніше за мікрофони з меншою X-координатою відповідно до прийнятої конвенції tau_ij = t_i - t_j.
+- test_srp_synthetic.py:
+  - згенерувати синтетичний сигнал для az=60°, el=25°, snr_db=20.
+  - локалізація має дати похибку менше 5° для coarse+refine.
+- test_tracker.py:
+  - перевірити, що tracker правильно проходить через azimuth 359° -> 1°.
+
+14. Performance
+- Уникай Python-loop по всіх direction у score_grid.
+- Дозволено chunking directions, наприклад chunk_size=512.
+- Використовуй numpy broadcasting.
+- Код має працювати на CPU.
+- Додай простий benchmark у README: час обробки одного 0.2 s кадру.
+
+15. Документація
+README.md має містити:
+- опис геометрії;
+- формули TDOA;
+- коротке пояснення SRP-PHAT;
+- як запустити simulation;
+- як запустити WAV mode;
+- як запустити realtime mode;
+- як змінити a, h, fs, bands;
+- обмеження:
+  - система оцінює напрямок, а не дальність;
+  - висока частина 700–2000 Hz використовується тільки для локального уточнення;
+  - потрібне калібрування каналів;
+  - confidence є обов’язковою частиною результату.
+
+Технічні вимоги:
+- Python >= 3.11.
+- Обов’язкові залежності: numpy, scipy, pyyaml, soundfile.
+- Опційні залежності: sounddevice, onnxruntime.
+- Код має бути типізований, із docstrings.
+- Уникай глобального стану.
+- Усі кути в API повертай у градусах, але внутрішні тригонометричні розрахунки роби в радіанах.
+- Усі координати — в метрах.
+- Усі затримки — в секундах, якщо не вказано явно samples.
+- Не використовуй pyroomacoustics у core-реалізації; можна згадати його в README як reference implementation.
+
+Після реалізації:
+- Запусти pytest.
+- Запусти scripts/run_simulation.py для кількох напрямків:
+  - az=0, el=10
+  - az=60, el=25
+  - az=180, el=45
+  - az=315, el=15
+- Покажи результати.

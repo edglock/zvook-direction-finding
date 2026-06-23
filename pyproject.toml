@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zvook-doa"
+version = "0.1.0"
+description = "4-channel acoustic UAV detection and direction finding with SRP-PHAT"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=1.24",
+  "scipy>=1.10",
+  "pyyaml>=6.0",
+  "soundfile>=0.12",
+]
+
+[project.optional-dependencies]
+realtime = ["sounddevice>=0.4"]
+onnx = ["onnxruntime>=1.16"]
+dev = ["pytest>=7.0"]
+
+[tool.setuptools.packages.find]
+include = ["zvook_doa*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

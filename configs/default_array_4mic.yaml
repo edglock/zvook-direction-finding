@@ -1,0 +1,15 @@
+fs: 48000
+speed_of_sound: 343.0
+triangle_side_m: 0.25
+top_height_m: 0.20
+frame_duration_s: 0.2
+hop_duration_s: 0.05
+detection_band_hz: [50.0, 2000.0]
+coarse_band_hz: [150.0, 650.0]
+refine_band_hz: [150.0, 2000.0]
+coarse_az_step_deg: 3.0
+coarse_el_step_deg: 3.0
+refine_radius_deg: 15.0
+refine_step_deg: 0.5
+min_elevation_deg: 0.0
+max_elevation_deg: 90.0
