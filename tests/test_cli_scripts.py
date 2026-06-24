@@ -14,6 +14,18 @@ def test_run_wav_cli_prints_clear_error(monkeypatch, capsys):
     assert "error: Expected 4-channel WAV" in captured.err
 
 
+def test_run_wav_cli_forwards_raw_mode(monkeypatch):
+    seen = {}
+
+    def run(*args, **kwargs):
+        seen.update(kwargs)
+
+    monkeypatch.setattr(run_wav, "run_wav_jsonl", run)
+    monkeypatch.setattr(sys, "argv", ["run_wav.py", "input.flac", "--raw"])
+    assert run_wav.main() == 0
+    assert seen["raw"] is True
+
+
 def test_run_realtime_cli_prints_clear_error(monkeypatch, capsys):
     def fail(*args, **kwargs):
         raise RuntimeError("Realtime input requires optional dependency 'sounddevice'.")
@@ -23,6 +35,18 @@ def test_run_realtime_cli_prints_clear_error(monkeypatch, capsys):
     assert run_realtime.main() == 2
     captured = capsys.readouterr()
     assert "error: Realtime input requires optional dependency" in captured.err
+
+
+def test_run_realtime_cli_forwards_raw_mode(monkeypatch):
+    seen = {}
+
+    def run(*args, **kwargs):
+        seen.update(kwargs)
+
+    monkeypatch.setattr(run_realtime, "run_realtime_jsonl", run)
+    monkeypatch.setattr(sys, "argv", ["run_realtime.py", "--raw"])
+    assert run_realtime.main() == 0
+    assert seen["raw"] is True
 
 
 def test_run_simulation_cli_prints_clear_error(monkeypatch, capsys):

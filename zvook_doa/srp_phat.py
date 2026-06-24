@@ -305,3 +305,30 @@ class SRPPHATLocalizer:
             "valid_frequency_bands_hz": list(refined["valid_bands_hz"]),
             "status": "ok" if confidence >= 0.35 else "low_confidence",
         }
+
+    def locate_raw(
+        self,
+        frame: np.ndarray,
+        calibration: Calibration | None = None,
+    ) -> dict[str, object]:
+        """Run SRP-PHAT localization without detector or confidence scoring."""
+
+        data = np.asarray(frame, dtype=float)
+        if calibration is not None:
+            data = apply_calibration(data, calibration, self.config.fs)
+        data = apply_hann(remove_dc(data))
+        spectra, freqs = rfft_multichannel(data, self.config.fs)
+        self._cached_freqs = freqs
+
+        coarse = self.locate_coarse(spectra, freqs)
+        refined = self.locate_refined(spectra, freqs, coarse)
+        return {
+            "azimuth_deg": float(refined["azimuth_deg"]),
+            "elevation_deg": float(refined["elevation_deg"]),
+            "coarse_azimuth_deg": float(coarse["azimuth_deg"]),
+            "coarse_elevation_deg": float(coarse["elevation_deg"]),
+            "srp_peak": float(refined["score"]),
+            "srp_peak_to_sidelobe": float(refined["peak_to_sidelobe"]),
+            "valid_frequency_bands_hz": list(refined["valid_bands_hz"]),
+            "status": "raw",
+        }

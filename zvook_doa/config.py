@@ -53,6 +53,16 @@ class ArrayConfig:
         if not isinstance(raw, dict):
             raise ValueError("Configuration YAML must contain a mapping.")
 
+        raw = dict(raw)
+        if "distance_mics" in raw:
+            if "triangle_side_m" in raw:
+                raise ValueError("Use either distance_mics or triangle_side_m, not both.")
+            raw["triangle_side_m"] = raw.pop("distance_mics")
+        if "analysis_band_hz" in raw:
+            band = raw.pop("analysis_band_hz")
+            raw.setdefault("detection_band_hz", band)
+            raw.setdefault("refine_band_hz", band)
+
         valid_names = {field.name for field in fields(cls)}
         unknown = set(raw) - valid_names
         if unknown:

@@ -18,12 +18,14 @@ def main() -> int:
     parser.add_argument("audio_path")
     parser.add_argument("--config", default=None, help="Path to ArrayConfig YAML.")
     parser.add_argument("--calibration", default=None, help="Path to calibration JSON.")
+    parser.add_argument("--raw", action="store_true", help="Run SRP-PHAT without detector/confidence output.")
     args = parser.parse_args()
     try:
         run_wav_jsonl(
             args.audio_path,
             config=load_array_config(args.config),
             calibration=load_calibration(args.calibration),
+            raw=args.raw,
         )
     except (OSError, RuntimeError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)

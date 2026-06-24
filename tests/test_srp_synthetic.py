@@ -22,3 +22,24 @@ def test_srp_synthetic_coarse_refine_under_five_degrees():
     error = angular_distance_deg(60.0, 25.0, result["azimuth_deg"], result["elevation_deg"])
     assert error < 5.0
     assert result["status"] in {"ok", "low_confidence"}
+
+
+def test_srp_raw_mode_excludes_detection_scores():
+    config = ArrayConfig()
+    positions = make_4mic_geometry(config)
+    frame = simulate_plane_wave(
+        azimuth_deg=60.0,
+        elevation_deg=25.0,
+        duration_s=config.frame_duration_s,
+        fs=config.fs,
+        mic_positions=positions,
+        signal_type="chirp",
+        snr_db=20.0,
+        speed_of_sound=config.speed_of_sound,
+    )
+    result = SRPPHATLocalizer(config, positions).locate_raw(frame)
+    error = angular_distance_deg(60.0, 25.0, result["azimuth_deg"], result["elevation_deg"])
+    assert error < 5.0
+    assert result["status"] == "raw"
+    assert "p_drone" not in result
+    assert "confidence" not in result

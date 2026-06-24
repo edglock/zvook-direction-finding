@@ -88,6 +88,7 @@ tau_ij = -dot(r_i - r_j, u) / c
 python -m zvook_doa.simulate --az 60 --el 25 --snr-db 10
 python scripts/run_simulation.py --az 60 --el 25 --snr-db 20 --config configs/default_array_4mic.yaml
 python scripts/run_wav.py path/to/4ch.wav --config configs/default_array_4mic.yaml --calibration configs/calibration_example.json
+python scripts/run_wav.py path/to/4ch.wav --config configs/default_array_4mic.yaml --raw
 python scripts/run_realtime.py --config configs/default_array_4mic.yaml --calibration configs/calibration_example.json
 ```
 
@@ -121,16 +122,37 @@ python -m venv .venv
 .venv/bin/python scripts/run_simulation.py --az 315 --el 15
 ```
 
-Змінити геометрію, `fs` або frequency bands можна через YAML:
+Змінити геометрію, `fs`, відстань між нижніми мікрофонами або frequency bands
+можна через YAML:
 
 ```bash
 .venv/bin/python scripts/run_simulation.py --config configs/default_array_4mic.yaml
 ```
 
+Для експериментів у config є короткі поля:
+
+```yaml
+distance_mics: 0.35
+analysis_band_hz: [120.0, 3000.0]
+coarse_band_hz: [120.0, 650.0]
+```
+
+`distance_mics` є alias для сторони нижнього трикутника `triangle_side_m`.
+`analysis_band_hz` задає detector band і local refinement band; `coarse_band_hz`
+можна залишати нижчим для стабільнішого грубого пошуку.
+
 Калібрування для WAV/FLAC/realtime режимів передається окремим JSON:
 
 ```bash
 .venv/bin/python scripts/run_wav.py path/to/4ch.wav --calibration configs/calibration_example.json
+```
+
+RAW-аналіз запускає SRP-PHAT без detector, tracker, `p_drone` і `confidence`:
+
+```bash
+.venv/bin/python scripts/run_wav.py path/to/4ch.flac \
+  --config configs/test_array_microphone_class_4mic.yaml \
+  --raw > raw_results.jsonl
 ```
 
 ## MVP self-check

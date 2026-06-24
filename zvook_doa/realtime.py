@@ -57,10 +57,26 @@ def process_frame(
     }
 
 
+def process_raw_frame(
+    frame: np.ndarray,
+    timestamp: float,
+    localizer: SRPPHATLocalizer,
+    calibration: Calibration | None = None,
+) -> dict[str, object]:
+    """Run SRP-PHAT on one frame without detector, confidence, or tracking."""
+
+    result = localizer.locate_raw(frame, calibration=calibration)
+    return {
+        "timestamp": timestamp,
+        **result,
+    }
+
+
 def run_wav_jsonl(
     path: str,
     config: ArrayConfig | None = None,
     calibration: Calibration | None = None,
+    raw: bool = False,
 ) -> None:
     """Process a 4-channel audio file and print JSON Lines."""
 
@@ -68,12 +84,17 @@ def run_wav_jsonl(
     audio, fs = read_audio_4ch(path)
     if fs != config.fs:
         raise ValueError(f"Audio fs={fs} does not match config fs={config.fs}.")
-    detector = make_detector(config)
     localizer = SRPPHATLocalizer(config, make_4mic_geometry(config))
-    tracker = DirectionTracker()
+    detector = None if raw else make_detector(config)
+    tracker = None if raw else DirectionTracker()
     for start, frame in iter_frames(audio, config.frame_samples, config.hop_samples):
         timestamp = start / config.fs
-        record = process_frame(frame, timestamp, config, detector, localizer, tracker, calibration)
+        if raw:
+            record = process_raw_frame(frame, timestamp, localizer, calibration)
+        else:
+            assert detector is not None
+            assert tracker is not None
+            record = process_frame(frame, timestamp, config, detector, localizer, tracker, calibration)
         print(json.dumps(json_ready(record), ensure_ascii=False), flush=True)
 
 
@@ -81,14 +102,15 @@ def run_realtime_jsonl(
     config: ArrayConfig | None = None,
     device: int | str | None = None,
     calibration: Calibration | None = None,
+    raw: bool = False,
 ) -> None:
     """Read realtime audio via sounddevice and print JSON Lines."""
 
     config = config or ArrayConfig()
     sd = require_sounddevice()
-    detector = make_detector(config)
     localizer = SRPPHATLocalizer(config, make_4mic_geometry(config))
-    tracker = DirectionTracker()
+    detector = None if raw else make_detector(config)
+    tracker = None if raw else DirectionTracker()
 
     block_queue: queue.Queue[np.ndarray] = queue.Queue(maxsize=32)
 
@@ -118,7 +140,12 @@ def run_realtime_jsonl(
                 joined = np.vstack(list(ring))
                 frame = joined[: config.frame_samples]
                 timestamp = time.time()
-                record = process_frame(frame, timestamp, config, detector, localizer, tracker, calibration)
+                if raw:
+                    record = process_raw_frame(frame, timestamp, localizer, calibration)
+                else:
+                    assert detector is not None
+                    assert tracker is not None
+                    record = process_frame(frame, timestamp, config, detector, localizer, tracker, calibration)
                 print(json.dumps(json_ready(record), ensure_ascii=False), flush=True)
                 keep = joined[config.hop_samples :]
                 ring.clear()

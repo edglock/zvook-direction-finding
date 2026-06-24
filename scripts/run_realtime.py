@@ -18,12 +18,14 @@ def main() -> int:
     parser.add_argument("--device", default=None)
     parser.add_argument("--config", default=None, help="Path to ArrayConfig YAML.")
     parser.add_argument("--calibration", default=None, help="Path to calibration JSON.")
+    parser.add_argument("--raw", action="store_true", help="Run SRP-PHAT without detector/confidence output.")
     args = parser.parse_args()
     try:
         run_realtime_jsonl(
             config=load_array_config(args.config),
             device=args.device,
             calibration=load_calibration(args.calibration),
+            raw=args.raw,
         )
     except (OSError, RuntimeError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)

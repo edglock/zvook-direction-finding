@@ -32,6 +32,36 @@ def test_load_array_config_from_yaml(tmp_path):
     assert config.coarse_band_hz == (200.0, 600.0)
 
 
+def test_load_array_config_accepts_experiment_aliases(tmp_path):
+    path = tmp_path / "array.yaml"
+    path.write_text(
+        "\n".join(
+            [
+                "distance_mics: 0.35",
+                "analysis_band_hz: [120, 3000]",
+                "coarse_band_hz: [120, 650]",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    config = load_array_config(path)
+    assert config.triangle_side_m == 0.35
+    assert config.detection_band_hz == (120.0, 3000.0)
+    assert config.refine_band_hz == (120.0, 3000.0)
+    assert config.coarse_band_hz == (120.0, 650.0)
+
+
+def test_load_array_config_rejects_duplicate_distance_fields(tmp_path):
+    path = tmp_path / "array.yaml"
+    path.write_text("distance_mics: 0.35\ntriangle_side_m: 0.25\n", encoding="utf-8")
+    try:
+        load_array_config(path)
+    except ValueError as exc:
+        assert "distance_mics or triangle_side_m" in str(exc)
+    else:
+        raise AssertionError("Expected duplicate distance config fields to fail.")
+
+
 def test_load_calibration_from_json(tmp_path):
     path = tmp_path / "calibration.json"
     path.write_text(

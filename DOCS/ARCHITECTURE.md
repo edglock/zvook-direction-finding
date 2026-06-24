@@ -112,6 +112,17 @@ The higher `650-3000 Hz` range is used for local refinement only. This keeps the
 coarse search more robust while still allowing sharper local estimates when the
 signal quality supports it.
 
+Experiment configs can use `analysis_band_hz` as a short alias for both
+detector and local refinement bands, while keeping `coarse_band_hz` separate.
+`distance_mics` is accepted as an alias for the lower triangle side
+`triangle_side_m`.
+
+## RAW Analysis
+
+WAV/FLAC and realtime pipelines support a RAW SRP-PHAT mode. In RAW mode the
+pipeline skips detector weighting, confidence scoring, and tracking, so JSON
+Lines output omits `p_drone` and `confidence`.
+
 ## Failure Modes and Status
 
 Expected statuses:
