@@ -9,6 +9,9 @@ def test_load_array_config_defaults_when_path_is_none():
     config = load_array_config()
     assert isinstance(config, ArrayConfig)
     assert config.fs == 48000
+    assert config.detection_band_hz == (120.0, 3000.0)
+    assert config.coarse_band_hz == (120.0, 650.0)
+    assert config.refine_band_hz == (120.0, 3000.0)
 
 
 def test_load_array_config_from_yaml(tmp_path):

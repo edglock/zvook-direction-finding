@@ -17,7 +17,7 @@ def _base_signal(signal_type: str, duration_s: float, fs: int, rng: np.random.Ge
     n_samples = int(round(duration_s * fs))
     t = np.arange(n_samples, dtype=float) / fs
     if signal_type == "chirp":
-        return chirp(t, f0=150.0, f1=1800.0, t1=max(duration_s, 1e-9), method="linear")
+        return chirp(t, f0=120.0, f1=3000.0, t1=max(duration_s, 1e-9), method="linear")
     if signal_type == "noise":
         return rng.standard_normal(n_samples)
     if signal_type == "tones":

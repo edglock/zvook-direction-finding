@@ -18,7 +18,7 @@ class DroneDetector:
     """
 
     fs: int = 48000
-    band_hz: tuple[float, float] = (80.0, 2000.0)
+    band_hz: tuple[float, float] = (120.0, 3000.0)
     onnx_model_path: str | None = None
     _onnx_session: object | None = field(default=None, init=False)
 

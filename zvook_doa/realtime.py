@@ -21,6 +21,12 @@ from .tracker import DirectionTracker
 from .utils import json_ready
 
 
+def make_detector(config: ArrayConfig) -> DroneDetector:
+    """Create the configured detector used by WAV and realtime pipelines."""
+
+    return DroneDetector(fs=config.fs, band_hz=config.detection_band_hz)
+
+
 def process_frame(
     frame: np.ndarray,
     timestamp: float,
@@ -62,7 +68,7 @@ def run_wav_jsonl(
     audio, fs = read_audio_4ch(path)
     if fs != config.fs:
         raise ValueError(f"Audio fs={fs} does not match config fs={config.fs}.")
-    detector = DroneDetector(fs=config.fs)
+    detector = make_detector(config)
     localizer = SRPPHATLocalizer(config, make_4mic_geometry(config))
     tracker = DirectionTracker()
     for start, frame in iter_frames(audio, config.frame_samples, config.hop_samples):
@@ -80,7 +86,7 @@ def run_realtime_jsonl(
 
     config = config or ArrayConfig()
     sd = require_sounddevice()
-    detector = DroneDetector(fs=config.fs)
+    detector = make_detector(config)
     localizer = SRPPHATLocalizer(config, make_4mic_geometry(config))
     tracker = DirectionTracker()
 

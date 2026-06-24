@@ -1,6 +1,8 @@
 import numpy as np
 
 from zvook_doa.detector import DroneDetector
+from zvook_doa.config import ArrayConfig
+from zvook_doa.realtime import make_detector
 
 
 def test_drone_detector_stub_returns_probability_and_weights():
@@ -12,3 +14,15 @@ def test_drone_detector_stub_returns_probability_and_weights():
     assert 0.0 <= result["p_drone"] <= 1.0
     assert result["frequency_weights"] is not None
     assert result["frequency_weights"].shape[0] == frame.shape[0] // 2 + 1
+
+
+def test_drone_detector_defaults_to_120_3000_hz_band():
+    detector = DroneDetector()
+    assert detector.band_hz == (120.0, 3000.0)
+
+
+def test_pipeline_detector_uses_array_config_detection_band():
+    config = ArrayConfig(detection_band_hz=(120.0, 3000.0))
+    detector = make_detector(config)
+    assert detector.fs == config.fs
+    assert detector.band_hz == (120.0, 3000.0)

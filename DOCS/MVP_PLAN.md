@@ -77,7 +77,7 @@ python scripts/run_simulation.py --az 60 --el 25 --snr-db 20
 Deliverables:
 
 - `detector.py` з `DroneDetector.predict()`.
-- Stub energy-based `p_drone` у смузі `80-2000 Hz`.
+- Stub energy-based `p_drone` у смузі `120-3000 Hz`.
 - Optional ONNX Runtime interface без обов'язкової залежності `onnxruntime`.
 - `compute_confidence()` на основі `p_drone`, SRP peak-to-sidelobe,
   valid subbands і optional track quality.

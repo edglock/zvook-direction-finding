@@ -7,9 +7,9 @@ lower_angles_deg: [0.0, -120.0, -240.0]
 top_mic_anchor: mic3
 frame_duration_s: 0.2
 hop_duration_s: 0.05
-detection_band_hz: [50.0, 2000.0]
-coarse_band_hz: [150.0, 650.0]
-refine_band_hz: [150.0, 2000.0]
+detection_band_hz: [120.0, 3000.0]
+coarse_band_hz: [120.0, 650.0]
+refine_band_hz: [120.0, 3000.0]
 coarse_az_step_deg: 3.0
 coarse_el_step_deg: 3.0
 refine_radius_deg: 15.0

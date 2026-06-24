@@ -22,9 +22,9 @@ class ArrayConfig:
     top_mic_anchor: str = "center"
     frame_duration_s: float = 0.2
     hop_duration_s: float = 0.05
-    detection_band_hz: tuple[float, float] = (50.0, 2000.0)
-    coarse_band_hz: tuple[float, float] = (150.0, 650.0)
-    refine_band_hz: tuple[float, float] = (150.0, 2000.0)
+    detection_band_hz: tuple[float, float] = (120.0, 3000.0)
+    coarse_band_hz: tuple[float, float] = (120.0, 650.0)
+    refine_band_hz: tuple[float, float] = (120.0, 3000.0)
     coarse_az_step_deg: float = 3.0
     coarse_el_step_deg: float = 3.0
     refine_radius_deg: float = 15.0

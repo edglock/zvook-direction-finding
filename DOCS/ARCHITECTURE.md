@@ -104,11 +104,11 @@ Realtime JSON Lines add `timestamp` and `p_drone`.
 
 ## Frequency Bands
 
-- Detection band: `50-2000 Hz`.
-- Coarse localization band: `150-650 Hz`.
-- Local refinement band: `150-2000 Hz`.
+- Detection band: `120-3000 Hz`.
+- Coarse localization band: `120-650 Hz`.
+- Local refinement band: `120-3000 Hz`.
 
-The higher `700-2000 Hz` range is used for local refinement only. This keeps the
+The higher `650-3000 Hz` range is used for local refinement only. This keeps the
 coarse search more robust while still allowing sharper local estimates when the
 signal quality supports it.
 
