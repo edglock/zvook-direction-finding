@@ -91,6 +91,19 @@ python scripts/run_wav.py path/to/4ch.wav --config configs/default_array_4mic.ya
 python scripts/run_realtime.py --config configs/default_array_4mic.yaml --calibration configs/calibration_example.json
 ```
 
+Для тестового `.flac`, записаного решіткою з класу `MicrophoneArray`, використовуй
+окрему конфігурацію:
+
+```bash
+.venv/bin/python scripts/run_wav.py path/to/recording.flac \
+  --config configs/test_array_microphone_class_4mic.yaml \
+  --calibration configs/calibration_example.json
+```
+
+Ця конфігурація відповідає `distance_mics=0.35`, `height_m4=1.0`,
+`base_height=0.65`, нижнім кутам `[0, -120, -240]` і 4-му мікрофону над
+мікрофоном `positions[2]`.
+
 ## Встановлення та перевірка
 
 ```bash
@@ -114,7 +127,7 @@ python -m venv .venv
 .venv/bin/python scripts/run_simulation.py --config configs/default_array_4mic.yaml
 ```
 
-Калібрування для WAV/realtime режимів передається окремим JSON:
+Калібрування для WAV/FLAC/realtime режимів передається окремим JSON:
 
 ```bash
 .venv/bin/python scripts/run_wav.py path/to/4ch.wav --calibration configs/calibration_example.json

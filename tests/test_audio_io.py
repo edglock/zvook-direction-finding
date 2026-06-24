@@ -1,7 +1,7 @@
 import numpy as np
 import soundfile as sf
 
-from zvook_doa.audio_io import iter_frames, read_wav_4ch
+from zvook_doa.audio_io import iter_frames, read_audio_4ch, read_wav_4ch
 
 
 def test_iter_frames_yields_expected_starts_and_shapes():
@@ -27,6 +27,15 @@ def test_read_wav_4ch_rejects_wrong_channel_count(tmp_path):
     try:
         read_wav_4ch(str(path))
     except ValueError as exc:
-        assert "Expected 4-channel WAV" in str(exc)
+        assert "Expected 4-channel audio" in str(exc)
     else:
         raise AssertionError("Expected non-4-channel WAV to fail.")
+
+
+def test_read_audio_4ch_accepts_flac_file(tmp_path):
+    path = tmp_path / "four_channel.flac"
+    data = np.zeros((16, 4), dtype=float)
+    sf.write(path, data, samplerate=48000, format="FLAC", subtype="PCM_16")
+    audio, fs = read_audio_4ch(str(path))
+    assert audio.shape == (16, 4)
+    assert fs == 48000

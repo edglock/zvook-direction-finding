@@ -8,13 +8,19 @@ import numpy as np
 import soundfile as sf
 
 
-def read_wav_4ch(path: str) -> tuple[np.ndarray, int]:
-    """Read a 4-channel WAV file."""
+def read_audio_4ch(path: str) -> tuple[np.ndarray, int]:
+    """Read a 4-channel audio file supported by soundfile, including WAV/FLAC."""
 
     data, fs = sf.read(path, always_2d=True, dtype="float64")
     if data.shape[1] != 4:
-        raise ValueError(f"Expected 4-channel WAV, got {data.shape[1]} channels.")
+        raise ValueError(f"Expected 4-channel audio, got {data.shape[1]} channels.")
     return data, int(fs)
+
+
+def read_wav_4ch(path: str) -> tuple[np.ndarray, int]:
+    """Read a 4-channel audio file. Kept for backward-compatible imports."""
+
+    return read_audio_4ch(path)
 
 
 def iter_frames(audio: np.ndarray, frame_samples: int, hop_samples: int) -> Iterator[tuple[int, np.ndarray]]:

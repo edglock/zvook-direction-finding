@@ -17,6 +17,9 @@ class ArrayConfig:
     speed_of_sound: float = 343.0
     triangle_side_m: float = 0.25
     top_height_m: float = 0.20
+    base_height_m: float = 0.0
+    lower_angles_deg: tuple[float, float, float] = (0.0, 120.0, -120.0)
+    top_mic_anchor: str = "center"
     frame_duration_s: float = 0.2
     hop_duration_s: float = 0.05
     detection_band_hz: tuple[float, float] = (50.0, 2000.0)
@@ -56,12 +59,18 @@ class ArrayConfig:
             raise ValueError(f"Unknown ArrayConfig fields: {sorted(unknown)}")
 
         data: dict[str, Any] = {}
-        tuple_fields = {"detection_band_hz", "coarse_band_hz", "refine_band_hz"}
+        tuple_fields = {
+            "detection_band_hz": 2,
+            "coarse_band_hz": 2,
+            "refine_band_hz": 2,
+            "lower_angles_deg": 3,
+        }
         for key, value in raw.items():
             if key in tuple_fields:
-                if not isinstance(value, (list, tuple)) or len(value) != 2:
-                    raise ValueError(f"{key} must contain exactly two numbers.")
-                data[key] = (float(value[0]), float(value[1]))
+                expected_len = tuple_fields[key]
+                if not isinstance(value, (list, tuple)) or len(value) != expected_len:
+                    raise ValueError(f"{key} must contain exactly {expected_len} numbers.")
+                data[key] = tuple(float(item) for item in value)
             else:
                 data[key] = value
         return cls(**data)

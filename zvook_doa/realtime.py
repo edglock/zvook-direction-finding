@@ -10,7 +10,7 @@ import time
 
 import numpy as np
 
-from .audio_io import iter_frames, read_wav_4ch, require_sounddevice
+from .audio_io import iter_frames, read_audio_4ch, require_sounddevice
 from .calibration import Calibration
 from .config import ArrayConfig
 from .detector import DroneDetector
@@ -56,12 +56,12 @@ def run_wav_jsonl(
     config: ArrayConfig | None = None,
     calibration: Calibration | None = None,
 ) -> None:
-    """Process a 4-channel WAV file and print JSON Lines."""
+    """Process a 4-channel audio file and print JSON Lines."""
 
     config = config or ArrayConfig()
-    audio, fs = read_wav_4ch(path)
+    audio, fs = read_audio_4ch(path)
     if fs != config.fs:
-        raise ValueError(f"WAV fs={fs} does not match config fs={config.fs}.")
+        raise ValueError(f"Audio fs={fs} does not match config fs={config.fs}.")
     detector = DroneDetector(fs=config.fs)
     localizer = SRPPHATLocalizer(config, make_4mic_geometry(config))
     tracker = DirectionTracker()

@@ -15,17 +15,25 @@ def make_4mic_geometry(config: ArrayConfig) -> np.ndarray:
     """Return microphone coordinates with shape (4, 3), in meters."""
 
     a = config.triangle_side_m
-    h = config.top_height_m
-    sqrt3 = math.sqrt(3.0)
-    return np.array(
-        [
-            [a / sqrt3, 0.0, 0.0],
-            [-a / (2.0 * sqrt3), a / 2.0, 0.0],
-            [-a / (2.0 * sqrt3), -a / 2.0, 0.0],
-            [0.0, 0.0, h],
-        ],
-        dtype=float,
-    )
+    radius = a / math.sqrt(3.0)
+    angles = np.deg2rad(np.asarray(config.lower_angles_deg, dtype=float))
+    positions = np.zeros((4, 3), dtype=float)
+    positions[:3, 0] = radius * np.cos(angles)
+    positions[:3, 1] = radius * np.sin(angles)
+    positions[:3, 2] = config.base_height_m
+
+    anchor = config.top_mic_anchor.lower()
+    if anchor == "center":
+        positions[3] = np.array([0.0, 0.0, config.top_height_m])
+    elif anchor in {"mic1", "mic2", "mic3"}:
+        anchor_index = int(anchor[-1]) - 1
+        positions[3] = np.array(
+            [positions[anchor_index, 0], positions[anchor_index, 1], config.top_height_m],
+            dtype=float,
+        )
+    else:
+        raise ValueError("top_mic_anchor must be 'center', 'mic1', 'mic2', or 'mic3'.")
+    return positions
 
 
 def make_pairs(n_mics: int) -> list[tuple[int, int]]:
